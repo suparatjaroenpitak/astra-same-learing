@@ -1,0 +1,39 @@
+{
+  "name": "@astra/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint || echo \"(next lint deprecated; using eslint directly)\" && eslint src --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astra/api-client": "*",
+    "@astra/shared": "*",
+    "@astra/ui-tokens": "*",
+    "@astra/validation": "*",
+    "next": "^15.2.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.54.2",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.2.0",
+    "@types/node": "^22.13.10",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "eslint": "^9.21.0",
+    "eslint-config-next": "^15.2.4",
+    "jsdom": "^26.0.0",
+    "tailwindcss": "^3.4.17",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.3",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.8"
+  }
+}
