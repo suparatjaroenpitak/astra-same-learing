@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum ExplanationLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum AttachmentKind {
+  IMAGE
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  emailVerifiedAt  DateTime?
+  hashedPassword   String?
+  name             String?
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  deleteToken      String?   @unique
+  deleteTokenExpiry DateTime?
+  explanationLevel ExplanationLevel @default(BEGINNER)
+  preferredLanguage String   @default("th")
+  dailyMessageLimit Int     @default(30)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  sessions       Session[]
+  conversations  Conversation[]
+  savedAnswers   SavedAnswer[]
+  usageRecords   UsageRecord[]
+  entitlement    Entitlement?
+  uploads        Attachment[]
+
+  @@index([createdAt])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  sessionToken String   @unique
+  expiresAt    DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("New conversation")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  subjectSlug String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+model Message {
+  id               String           @id @default(cuid())
+  conversationId   String
+  role             MessageRole
+  content          String
+  explanationLevel ExplanationLevel?
+  model            String?
+  tokensIn         Int?
+  tokensOut        Int?
+  conversation     Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  attachments      Attachment[]
+  savedBy          SavedAnswer[]
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model Attachment {
+  id           String         @id @default(cuid())
+  messageId    String?
+  uploaderId   String
+  storageKey   String
+  mimeType     String
+  sizeBytes    Int
+  kind         AttachmentKind @default(IMAGE)
+  message      Message?       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  uploader     User           @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  createdAt    DateTime       @default(now())
+
+  @@index([uploaderId])
+  @@index([messageId])
+}
+
+model Subject {
+  slug        String   @id
+  name        String
+  nameTh      String?
+  description String?
+  colorHex    String   @default("#FFB800")
+  lessons     Lesson[]
+
+  createdAt DateTime @default(now())
+}
+
+model Lesson {
+  id        String  @id @default(cuid())
+  subjectSlug String
+  title     String
+  titleTh   String?
+  level     ExplanationLevel @default(BEGINNER)
+  body      String
+  order     Int     @default(0)
+  subject   Subject @relation(fields: [subjectSlug], references: [slug], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  @@index([subjectSlug, order])
+}
+
+model SavedAnswer {
+  id        String  @id @default(cuid())
+  userId    String
+  messageId String
+  note      String?
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, messageId])
+  @@index([userId, createdAt])
+}
+
+model UsageRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  day       DateTime @db.Date
+  model     String
+  tokensIn  Int      @default(0)
+  tokensOut Int      @default(0)
+  messages  Int      @default(0)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, day, model])
+  @@index([userId, day])
+}
+
+model Entitlement {
+  id     String @id @default(cuid())
+  userId String @unique
+  plan   String @default("free")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
